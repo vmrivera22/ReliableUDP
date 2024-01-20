@@ -1,0 +1,139 @@
+Five Tests:
+
+Note: For each test I used different window sizes, MTU, and changed the output file path to test multiple aspects
+simultaniously.
+
+1. Transfering a small (57 bytes) txt file (drop rate: 0) to two servers:
+
+    Command Used Client:
+        "./myclient 2 destaddr.txt 50 15 testin.txt out.txt"
+    destaddr.txt contents:
+        127.0.0.1 65000
+        127.0.0.1 60000
+    
+    Command Used Server1:
+        "./myserver 65000 0 rootone/folder"
+    Command Used Server2:
+        "./myserver 60000 0 roottwo/folder"
+    
+    Results:
+        This resulted in the successful file transfer of testin.txt to both servers who output the file into rootone/folder/out.txt
+        and roottwo/folder/out.txt. 
+        Both files were compared using
+        "diff testin.txt rootone/folder/out.txt"
+        and
+        "diff testin.txt roottwo/folder/out.txt"
+        which showed that the files were the same.
+
+
+2. Transfering a large (100mb) txt file (drop rate: 0) to two servers:
+    Command Used Client:
+        "./myclient 2 destaddr.txt 32000 15 large/100MB.txt large/out.txt"
+    destaddr.txt contents:
+        127.0.0.1 65000
+        127.0.0.1 60000
+    
+    Command Used Server1:
+        "./myserver 65000 0 rootone/folder"
+    Command Used Server2:
+        "./myserver 60000 0 roottwo/folder"
+    
+    Results:
+        This resulted in the successful file transfer of 100mb.txt to the two servers who output the file into rootone/folder/large/out.txt 
+        and roottwo/folder/large/out.txt respectively. 
+        Both files were compared using
+        "diff large/100mb.txt rootone/folder/large/out.txt"
+        and
+        "diff large/100mb.txt roottwo/folder/large/out.txt"
+        which showed that the files were the same.
+
+
+3. Transfering a binary file (drop rate: 5) to three servers:
+    Command Used Client:
+        "./myclient 2 destaddr.txt 22000 15 input/binary/dog2.png results/binary/outdog.png"
+    destaddr.txt contents:
+        127.0.0.1 65000
+        127.0.0.1 60000
+        127.0.0.1 59000
+
+    Command Used Server1:
+        "./myserver 65000 5 rootone/root"
+
+    Command Used Server2:
+        "./myserver 60000 5 roottwo/root"
+    Command Used Server3:
+        "./myserver 59000 5 rootthree/root"
+    
+    Results:
+        This resulted in the successful file transfer of the file dog2.png to the servers who output the file into 
+        "rootone/root/results/binary/outdog.png"
+        "roottwo/root/results/binary/outdog.png"
+        and
+        "rootthree/root/results/binary/outdog.png"
+
+        Both files were compared using
+        "diff input/binary/dog2.txt rootone/root/results/binary/outdog.png"
+        "diff input/binary/dog2.txt roottwo/root/results/binary/outdog.png"
+        and
+        "diff input/binary/dog2.txt rootthree/root/results/binary/outdog.png"
+        which showed that the files were the same. On the servers log it was observed that 3 packets were droped by each server.
+        Two of these being data pakcets and one being an ACK. Despite this the client was able to retransmit the packets and the
+        server was able to reorder and reconstruct the file exactally as the original.
+
+
+4. Two Clients sending a 10mb file to two servers:
+    Command Used Client1:
+        "./myclient 2 destadd.txt 220 5 dog2.png out/binary/outdog2.png"
+    Command Used Client2:
+        "./myclient 2 destadd.txt 22000 5 bible.txt out/txt/outbible.txt"
+
+    destaddr.txt contents:
+        127.0.0.1 65000
+        127.0.0.1 60000
+
+    Command Used Server1:
+        "./myserver 60000 5 serv1"
+    Command Used Server2:
+        "./myserver 65000 5 serv2"
+    
+    Results:
+        This resulted in both files being correctly transfered to both servers. The first server output: 
+        "serv1/out/binary/outdog2.png"
+        and
+        "serv1/out/txt/outbible.txt"
+        The second server output
+        "serv2/out/binary/outdog2.png"
+        and
+        "serv2/out/txt/outbible.txt".
+
+        The files were compared using: 
+        "diff bible.txt serv1/out/txt/outbible.txt"
+        "diff bible.txt serv2/out/txt/outbible.txt"
+        "diff dog2.png serv1/out/binary/outdog2.png"
+        and
+        "diff dog2.png serv1/out/binary/outdog2.png".
+
+        The output of the commands showed that the files were the same and were transfered correctly. This test showed that the servers
+        could correctly handle multiple clients and that the clients could transfer files to multiple serveres correctly.
+
+
+5. Inputing incorrect arguments (IP in destaddr file):
+    Command Used Client:
+        "./myclient 2 destadd.txt 22000 5 bible.txt out/txt/outbible.txt"
+    destaddr.txt contents:
+        127.0.0.1 65000
+        127.0.0.b 60000
+
+    Command Used Server1:
+        "./myserver 65000 6"
+    Command Used Server2:
+        "./myserver 60000 3"
+
+    
+    Results:
+        This resulted in only one of the servers (IP: 127.0.0.1 Port: 65000) correctly getting and outputing the file. 
+        Since the second IP address of the destaddr.txt file was invalid the client output 
+        "Incorrect IP (127.0.0.b) entered in destination file" when the file was read and 
+        "Error explanation above. Error transfering file to destination due to incorrect IP or Port." at the end of the program 
+        (after the second file succesfully gets the file) since it may be hard to detect that the first error line was output to stderr.
+

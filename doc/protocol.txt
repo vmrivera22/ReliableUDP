@@ -1,0 +1,30 @@
+Overview:
+The protocol used to implement reliability was a selective repeat approach. The packs sent to the server are
+stored into a buffer if they were not dropped - this included out of order packets. An ACK is sent for each packet
+recived (if the ACK is not dropped). In the end - after the whole file was recived the server outputs the contents of 
+the array into an outfile indicated by the client concatenated to a root path indicated by the server.
+
+Client Retransmission:
+If the window is full then the client will wait to recive an ACK in order to move the window, if no ACK is recived within 1 second, then
+the client assumes that the packet was lost (for this lab it is most likely that the server dropped it) and retransmits the packet. A
+particular packet is retransmitted up to 4 times, if it is dropped a 5th time then the thread will be exited. The client keeps track of
+the packets that have been ACKed by setting a buffer the index of the packets SN to 1. Similarly the Client also keeps track of how many
+times the packet has been retransmitted and incremnts the number at buff[sn] every time a packet has to be retransmitted.
+
+Window movement:
+Initially a thread will send window size number of packets to the server. Once this number is hit the window is full and the client waits
+for an ACK from the server. If there is no response then the packets are retransmitted, if there is a response then the available window size
+is incremented by 1. Immedeatly after the client sends another packet so as to have window size number of packets in transition at all times.
+
+Server Client Management:
+The server also handles multiple clients using a linked list to keep track of the combination of ports and IP from which it is 
+reciving data from. If the server recives a packet from a client it has not recived anything from then it adds a new node to 
+a linked list with the IP and Port number from where the packet came from. It also allocates memory to hold the data of the
+incomming packets. The incomming packets are stored within this buffer until all the expected packets are recived (the expected number
+of packets are part of the header). This is so that regardless of the order of the incomming packets the server can still output 
+the file correctly.
+
+Client server management:
+To send a file to multiple clients I used threads. The Client creates a data structure for each address (input in addr.conf) that contains
+the IP and Port from the file as well as things like its own socket file descriptor and window size. The structure is then passed into 
+each thread as an argument. Each thread then handles sending the file to a server. 
